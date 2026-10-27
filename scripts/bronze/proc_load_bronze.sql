@@ -2,18 +2,29 @@
 /*
 ===============================================================================
   Stored Procedure: bronze.load_bronze
-  Description:      Loads raw CRM and ERP data into the Bronze layer.
+  Description:      Loads raw CRM and ERP data from CSV files into the Bronze
+                    layer.
   Database:         DataWarehouse
+  Layer:            Bronze (Raw Data)
 ===============================================================================
 
-  Actions:
-      1. Truncate existing data from all six Bronze tables.
-      2. Load fresh data from CSV source files.
-      3. Commit all changes if loading succeeds.
-      4. Roll back all changes if any loading operation fails.
+  Tables:
+      CRM:
+          bronze.crm_cust_info
+          bronze.crm_prd_info
+          bronze.crm_sales_details
 
-  Error Handling:
-      TRY...CATCH with transaction rollback and error propagation.
+      ERP:
+          bronze.erp_cust_az12
+          bronze.erp_loc_a101
+          bronze.erp_px_cat_g1v2
+
+  Operations:
+      1. Truncate existing data from each Bronze table.
+      2. Bulk load fresh data from CSV source files.
+      3. Measure each table's loading duration.
+      4. Measure total batch execution time.
+      5. Roll back the transaction if an error occurs.
 
   WARNING:
       All existing data in the six target tables will be replaced.
@@ -29,21 +40,27 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
-    DECLARE @start_time DATETIME,@end_time DATETIME,@batch_start_time DATETIME,@batch_end_time DATETIME;
-     
+
+    DECLARE @StartTime      DATETIME2(7);
+    DECLARE @EndTime        DATETIME2(7);
+    DECLARE @BatchStartTime DATETIME2(7) = SYSDATETIME();
+    DECLARE @BatchEndTime   DATETIME2(7);
+    DECLARE @DurationMs     BIGINT;
+
     BEGIN TRY
         BEGIN TRANSACTION;
 
         PRINT '=============================================';
-        PRINT 'Loading Bronze Layer';
+        PRINT '       STARTING BRONZE LAYER LOAD';
         PRINT '=============================================';
 
+
         -- =============================================
-        -- Load CRM Tables
+        -- 1. CRM CUSTOMER INFORMATION
         -- =============================================
-        set @batch_start_time = GETDATE();
-        -- 1. Customer Information
-        set @start_time = GETDATE();
+
+        SET @StartTime = SYSDATETIME();
+
         PRINT 'Loading bronze.crm_cust_info...';
 
         TRUNCATE TABLE bronze.crm_cust_info;
@@ -56,12 +73,22 @@ BEGIN
             FIELDTERMINATOR = ',',
             TABLOCK
         );
-        set @end_time = GETDATE();
 
-        PRINT 'Loaded bronze.crm_cust_info successfully taking.' +cast (datediff(second,@start_time,@end_time) as nvarchar) + ' seconds';
+        SET @EndTime = SYSDATETIME();
 
-        -- 2. Product Information
-        set @start_time = GETDATE();
+        SET @DurationMs = DATEDIFF_BIG(
+            MILLISECOND, @StartTime, @EndTime
+        );
+
+        PRINT 'Table bronze.crm_cust_info loaded successfully in '
+            + CAST(@DurationMs AS VARCHAR(20)) + ' ms.';
+
+
+        -- =============================================
+        -- 2. CRM PRODUCT INFORMATION
+        -- =============================================
+
+        SET @StartTime = SYSDATETIME();
 
         PRINT 'Loading bronze.crm_prd_info...';
 
@@ -75,11 +102,23 @@ BEGIN
             FIELDTERMINATOR = ',',
             TABLOCK
         );
-        set @end_time = GETDATE();
-        PRINT 'Loaded bronze.crm_prd_info successfully taking.' +cast (datediff(second,@start_time,@end_time) as nvarchar) + ' seconds';;
 
-        -- 3. Sales Details
-        set @start_time = GETDATE();
+        SET @EndTime = SYSDATETIME();
+
+        SET @DurationMs = DATEDIFF_BIG(
+            MILLISECOND, @StartTime, @EndTime
+        );
+
+        PRINT 'Table bronze.crm_prd_info loaded successfully in '
+            + CAST(@DurationMs AS VARCHAR(20)) + ' ms.';
+
+
+        -- =============================================
+        -- 3. CRM SALES DETAILS
+        -- =============================================
+
+        SET @StartTime = SYSDATETIME();
+
         PRINT 'Loading bronze.crm_sales_details...';
 
         TRUNCATE TABLE bronze.crm_sales_details;
@@ -92,15 +131,23 @@ BEGIN
             FIELDTERMINATOR = ',',
             TABLOCK
         );
-        set @end_time = GETDATE();
-        PRINT 'Loaded bronze.crm_sales_details successfully taking.' +cast (datediff(second,@start_time,@end_time) as nvarchar) + ' seconds';;
+
+        SET @EndTime = SYSDATETIME();
+
+        SET @DurationMs = DATEDIFF_BIG(
+            MILLISECOND, @StartTime, @EndTime
+        );
+
+        PRINT 'Table bronze.crm_sales_details loaded successfully in '
+            + CAST(@DurationMs AS VARCHAR(20)) + ' ms.';
+
 
         -- =============================================
-        -- Load ERP Tables
+        -- 4. ERP CUSTOMER INFORMATION
         -- =============================================
 
-        -- 4. Customer Information
-        set @start_time = GETDATE();
+        SET @StartTime = SYSDATETIME();
+
         PRINT 'Loading bronze.erp_cust_az12...';
 
         TRUNCATE TABLE bronze.erp_cust_az12;
@@ -113,11 +160,23 @@ BEGIN
             FIELDTERMINATOR = ',',
             TABLOCK
         );
-        set @end_time = GETDATE();
-        PRINT 'Loaded bronze.erp_cust_az12 successfully taking.' +cast (datediff(second,@start_time,@end_time) as nvarchar) + ' seconds';
 
-        -- 5. Location Information
-        set @start_time = GETDATE();
+        SET @EndTime = SYSDATETIME();
+
+        SET @DurationMs = DATEDIFF_BIG(
+            MILLISECOND, @StartTime, @EndTime
+        );
+
+        PRINT 'Table bronze.erp_cust_az12 loaded successfully in '
+            + CAST(@DurationMs AS VARCHAR(20)) + ' ms.';
+
+
+        -- =============================================
+        -- 5. ERP LOCATION INFORMATION
+        -- =============================================
+
+        SET @StartTime = SYSDATETIME();
+
         PRINT 'Loading bronze.erp_loc_a101...';
 
         TRUNCATE TABLE bronze.erp_loc_a101;
@@ -130,11 +189,23 @@ BEGIN
             FIELDTERMINATOR = ',',
             TABLOCK
         );
-        set @end_time = GETDATE();
-        PRINT 'Loaded bronze.erp_loc_a101 successfully taking.' +cast (datediff(second,@start_time,@end_time) as nvarchar) + ' seconds';
 
-        -- 6. Product Category Information
-        set @start_time = GETDATE();
+        SET @EndTime = SYSDATETIME();
+
+        SET @DurationMs = DATEDIFF_BIG(
+            MILLISECOND, @StartTime, @EndTime
+        );
+
+        PRINT 'Table bronze.erp_loc_a101 loaded successfully in '
+            + CAST(@DurationMs AS VARCHAR(20)) + ' ms.';
+
+
+        -- =============================================
+        -- 6. ERP PRODUCT CATEGORY INFORMATION
+        -- =============================================
+
+        SET @StartTime = SYSDATETIME();
+
         PRINT 'Loading bronze.erp_px_cat_g1v2...';
 
         TRUNCATE TABLE bronze.erp_px_cat_g1v2;
@@ -147,43 +218,59 @@ BEGIN
             FIELDTERMINATOR = ',',
             TABLOCK
         );
-        set @end_time = GETDATE();
-        PRINT 'Loaded bronze.erp_px_cat_g1v2 successfully taking.' +cast (datediff(second,@start_time,@end_time) as nvarchar) + ' seconds';
+
+        SET @EndTime = SYSDATETIME();
+
+        SET @DurationMs = DATEDIFF_BIG(
+            MILLISECOND, @StartTime, @EndTime
+        );
+
+        PRINT 'Table bronze.erp_px_cat_g1v2 loaded successfully in '
+            + CAST(@DurationMs AS VARCHAR(20)) + ' ms.';
+
 
         -- =============================================
-        -- Commit Transaction
+        -- COMMIT TRANSACTION AND REPORT TOTAL TIME
         -- =============================================
 
         COMMIT TRANSACTION;
-        set @batch_end_time = GETDATE();
 
+        SET @BatchEndTime = SYSDATETIME();
+
+        SET @DurationMs = DATEDIFF_BIG(
+            MILLISECOND, @BatchStartTime, @BatchEndTime
+        );
 
         PRINT '=============================================';
-        PRINT 'Bronze Layer loaded successfully taking.' +cast (datediff(second,@batch_start_time,@batch_end_time) as nvarchar) + ' seconds';
+        PRINT 'BRONZE LAYER LOADED SUCCESSFULLY';
+        PRINT 'Total execution time: '
+            + CAST(@DurationMs AS VARCHAR(20)) + ' ms';
         PRINT 'Transaction committed.';
         PRINT '=============================================';
 
     END TRY
     BEGIN CATCH
 
-        -- Roll back changes if a transaction is active
         IF XACT_STATE() <> 0
-        BEGIN
             ROLLBACK TRANSACTION;
-        END;
+
+        SET @BatchEndTime = SYSDATETIME();
+
+        SET @DurationMs = DATEDIFF_BIG(
+            MILLISECOND, @BatchStartTime, @BatchEndTime
+        );
 
         PRINT '=============================================';
-        PRINT 'ERROR: Bronze Layer loading failed.';
-        PRINT ERROR_MESSAGE();
-        PRINT 'All transactional changes were rolled back.';
+        PRINT 'ERROR: BRONZE LAYER LOAD FAILED';
+        PRINT 'Error: ' + ERROR_MESSAGE();
+        PRINT 'Elapsed time before failure: '
+            + CAST(@DurationMs AS VARCHAR(20)) + ' ms';
+        PRINT 'Transaction rolled back.';
         PRINT '=============================================';
 
-        -- Return the original SQL Server error
         THROW;
 
     END CATCH;
 END;
 GO
-
-
 
