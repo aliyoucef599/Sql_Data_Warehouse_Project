@@ -78,11 +78,6 @@ Hi there! 👋 I'm **Youcef Alibelhadj**, a computer science graduate passionate
 
 I enjoy transforming raw data into meaningful insights, building data pipelines, designing data warehouses, and developing intelligent systems that solve real-world problems.
 
-### 💻 Interests & Technologies
-
-- 📊 **Data Engineering:** SQL, Data Warehousing, ETL Pipelines
-- 🗄️ **Databases & Visualization:** SQL Server, InfluxDB, Grafana
-- 🛠️ **Tools:** Git, Docker, Linux
 
 ### 🎯 My Goal
 
