@@ -505,7 +505,7 @@ This project demonstrates practical experience in:
 
 ## 👨‍💻 About Me
 
-Hi! I'm **Alibelhadj Youcef**, a Computer Science graduate passionate about **Data Engineering, Data Analytics **.
+Hi! I'm **Alibelhadj Youcef**, a Computer Science graduate passionate about ** Data Engineering, Data Analytics **.
 
 I enjoy building data pipelines, designing data warehouses, exploring analytical techniques, and transforming raw data into meaningful insights.
 
